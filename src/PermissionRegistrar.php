@@ -9,6 +9,7 @@ use Illuminate\Contracts\Auth\Access\Gate;
 use Spatie\Permission\Contracts\Permission;
 use Illuminate\Contracts\Auth\Access\Authorizable;
 use Spatie\Permission\Exceptions\PermissionDoesNotExist;
+use Spatie\Permission\Models\Module;
 
 class PermissionRegistrar
 {
@@ -26,6 +27,9 @@ class PermissionRegistrar
 
     /** @var string */
     protected $roleClass;
+    
+    /** @var string */
+    protected $moduleClass;
 
     /** @var \Illuminate\Support\Collection */
     protected $permissions;
@@ -50,6 +54,7 @@ class PermissionRegistrar
         $this->gate = $gate;
         $this->permissionClass = config('permission.models.permission');
         $this->roleClass = config('permission.models.role');
+        $this->moduleClass = config('permission.models.module');
 
         $this->cacheManager = $cacheManager;
         $this->initializeCache();
@@ -170,6 +175,16 @@ class PermissionRegistrar
     public function getRoleClass(): Role
     {
         return app($this->roleClass);
+    }
+
+    /**
+     * Get an instance of the module class.
+     *
+     * @return \Spatie\Permission\Contracts\Module
+     */
+    public function getModuleClass(): Module
+    {
+        return app($this->moduleClass);
     }
 
     /**

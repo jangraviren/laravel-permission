@@ -8,6 +8,8 @@ class UnauthorizedException extends HttpException
 {
     private $requiredRoles = [];
 
+    private $requiredModules = [];
+
     private $requiredPermissions = [];
 
     public static function forRoles(array $roles): self
@@ -21,6 +23,21 @@ class UnauthorizedException extends HttpException
 
         $exception = new static(403, $message, null, []);
         $exception->requiredRoles = $roles;
+
+        return $exception;
+    }
+    
+    public static function forModules(array $modules): self
+    {
+        $message = 'User does not have the right modules.';
+
+        if (config('permission.display_permission_in_exception')) {
+            $permStr = implode(', ', $modules);
+            $message = 'User does not have the right modules. Necessary modules are '.$permStr;
+        }
+
+        $exception = new static(403, $message, null, []);
+        $exception->requiredModules = $modules;
 
         return $exception;
     }

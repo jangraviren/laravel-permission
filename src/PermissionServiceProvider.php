@@ -30,6 +30,7 @@ class PermissionServiceProvider extends ServiceProvider
             $this->commands([
                 Commands\CacheReset::class,
                 Commands\CreateRole::class,
+                Commands\CreateModule::class,
                 Commands\CreatePermission::class,
                 Commands\Show::class,
             ]);
@@ -62,6 +63,7 @@ class PermissionServiceProvider extends ServiceProvider
 
         $this->app->bind(PermissionContract::class, $config['permission']);
         $this->app->bind(RoleContract::class, $config['role']);
+        $this->app->bind(ModuleContract::class, $config['module']);
     }
 
     protected function registerBladeExtensions()
@@ -72,6 +74,7 @@ class PermissionServiceProvider extends ServiceProvider
 
                 return "<?php if(auth({$guard})->check() && auth({$guard})->user()->hasRole({$role})): ?>";
             });
+            
             $bladeCompiler->directive('elserole', function ($arguments) {
                 list($role, $guard) = explode(',', $arguments.',');
 
@@ -117,6 +120,59 @@ class PermissionServiceProvider extends ServiceProvider
                 return '<?php endif; ?>';
             });
         });
+
+        $this->app->afterResolving('blade.compiler', function (BladeCompiler $bladeCompiler) {
+            $bladeCompiler->directive('module', function ($arguments) {
+                list($module, $guard) = explode(',', $arguments.',');
+
+                return "<?php if(auth({$guard})->check() && auth({$guard})->user()->hasModule({$module})): ?>";
+            });
+            
+            $bladeCompiler->directive('elsemodule', function ($arguments) {
+                list($module, $guard) = explode(',', $arguments.',');
+
+                return "<?php elseif(auth({$guard})->check() && auth({$guard})->user()->hasModule({$module})): ?>";
+            });
+            $bladeCompiler->directive('endmodule', function () {
+                return '<?php endif; ?>';
+            });
+
+            $bladeCompiler->directive('hasmodule', function ($arguments) {
+                list($module, $guard) = explode(',', $arguments.',');
+
+                return "<?php if(auth({$guard})->check() && auth({$guard})->user()->hasModule({$module})): ?>";
+            });
+            $bladeCompiler->directive('endhasmodule', function () {
+                return '<?php endif; ?>';
+            });
+
+            $bladeCompiler->directive('hasanymodule', function ($arguments) {
+                list($modules, $guard) = explode(',', $arguments.',');
+
+                return "<?php if(auth({$guard})->check() && auth({$guard})->user()->hasAnyModule({$modules})): ?>";
+            });
+            $bladeCompiler->directive('endhasanymodule', function () {
+                return '<?php endif; ?>';
+            });
+
+            $bladeCompiler->directive('hasallmodules', function ($arguments) {
+                list($modules, $guard) = explode(',', $arguments.',');
+
+                return "<?php if(auth({$guard})->check() && auth({$guard})->user()->hasAllModules({$modules})): ?>";
+            });
+            $bladeCompiler->directive('endhasallmodules', function () {
+                return '<?php endif; ?>';
+            });
+
+            $bladeCompiler->directive('unlessmodule', function ($arguments) {
+                list($module, $guard) = explode(',', $arguments.',');
+
+                return "<?php if(!auth({$guard})->check() || ! auth({$guard})->user()->hasModule({$module})): ?>";
+            });
+            $bladeCompiler->directive('endunlessmodule', function () {
+                return '<?php endif; ?>';
+            });
+        });
     }
 
     protected function registerMacroHelpers()
@@ -129,6 +185,18 @@ class PermissionServiceProvider extends ServiceProvider
             $roles = implode('|', $roles);
 
             $this->middleware("role:$roles");
+
+            return $this;
+        });
+
+        Route::macro('module', function ($modules = []) {
+            if (! is_array($modules)) {
+                $modules = [$modules];
+            }
+
+            $modules = implode('|', $modules);
+
+            $this->middleware("module:$modules");
 
             return $this;
         });
